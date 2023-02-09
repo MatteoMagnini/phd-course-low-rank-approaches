@@ -18,9 +18,9 @@ SEPARATOR = ','
 SKIP = 69
 
 
-def load_dataset() -> pd.DataFrame:
+def download_dataset() -> pd.DataFrame:
     """
-    Load the dataset from the UCI repository.
+    Download the dataset from the UCI repository.
     :return: The dataset as a pandas DataFrame.
     """
     datasets = []
@@ -40,3 +40,11 @@ def save_dataset(df: pd.DataFrame) -> None:
     :return: None
     """
     df.to_csv(PATH / 'dataset.csv', index=False)
+
+
+def load_dataset() -> pd.DataFrame:
+    """
+    Load the dataset from a CSV file.
+    :return: The dataset as a pandas DataFrame.
+    """
+    return pd.read_csv(PATH / 'dataset.csv')

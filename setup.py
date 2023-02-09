@@ -1,6 +1,7 @@
 import distutils.cmd
 from setuptools import find_packages, setup
-from dataset import load_dataset, save_dataset
+from dataset import download_dataset, save_dataset, load_dataset
+from statistic import compute_missing_values_frequency, normalise_dataset, substitute_missing_values
 
 
 class DownloadDataset(distutils.cmd.Command):
@@ -16,8 +17,27 @@ class DownloadDataset(distutils.cmd.Command):
         pass
 
     def run(self):
-        print('Loading dataset...')
-        save_dataset(load_dataset())
+        print('Downloading dataset...')
+        save_dataset(download_dataset())
+        print('Dataset downloaded.')
+
+
+class AnalyseDataset(distutils.cmd.Command):
+    """A custom command to analyse the dataset from the data folder."""
+
+    description = 'analyses datasets from the data folder'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        print('Analyzing dataset...')
+        dataset = substitute_missing_values(normalise_dataset(load_dataset()))
+        print('Dataset analyzed.')
 
 
 setup(
@@ -48,5 +68,6 @@ setup(
     zip_safe=False,
     cmdclass={
         'download_dataset': DownloadDataset,
+        'analyse_dataset': AnalyseDataset,
     },
 )
