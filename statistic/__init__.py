@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -19,9 +20,9 @@ def substitute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     Substitute missing values following these criteria:
     - if the frequency of the missing values is less than 1%, then substitute with the mean of the column;
     - if the frequency of the missing values is greater than 1%, then substitute with the regression of the second most
-    correlated column with the given column if the correlation is greater than 0.8 and less than 0.99 else substitute
-    with the mean of the column (if the value of the correlated column is missing, then use the mean of the
-    correlated column to perform the regression);
+      correlated column with the given column:
+      - if the correlation is greater than 0.8 and less than 0.99 else substitute with the mean of the column;
+      - if the value of the correlated column is missing use the mean of the correlated column instead;
     - if the frequency of the missing values is greater than 10%, then drop the column.
     :param df: The dataset as a pandas DataFrame.
     :return: The dataset with missing values substituted.
@@ -44,12 +45,23 @@ def substitute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
                 # if correlated values contains nan values, then substitute with the mean of the column
                 correlated_values.fillna(all_correlated_values.mean(), inplace=True)
                 substitutions = regressor.predict(correlated_values.values.reshape(-1, 1))
+                substitutions = {k: v for k, v in zip(missing_values_indices, substitutions)}
                 defensive_copy[column].fillna(pd.Series(substitutions), inplace=True)
             else:
                 defensive_copy[column].fillna(df[column].mean(), inplace=True)
         else:
             defensive_copy.drop(column, axis=1, inplace=True)
     return defensive_copy
+
+
+def remove_uncorrelated_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove the features that are not correlated with the label.
+    :param df: The dataset as a pandas DataFrame.
+    :return: The dataset with the uncorrelated features removed.
+    """
+    correlation = df.corr().iloc[-1]
+    return df[[c for c in df.columns if (abs(correlation[c]) > 0.1) and not math.isnan(correlation[c])]]
 
 
 def normalise_dataset(df: pd.DataFrame) -> pd.DataFrame:
@@ -60,6 +72,17 @@ def normalise_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """
     for column in df.columns[:-1]:
         df[column] = (df[column] - df[column].min()) / (df[column].max() - df[column].min())
+    return df
+
+
+def standardise_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Standardise the dataset except for the last column.
+    :param df: The dataset as a pandas DataFrame.
+    :return: The standardised dataset.
+    """
+    for column in df.columns[:-1]:
+        df[column] = (df[column] - df[column].mean()) / df[column].std()
     return df
 
 
@@ -92,3 +115,18 @@ def get_trained_linear_regressor(train_x: pd.DataFrame, train_y: pd.DataFrame) -
     regressor.fit(train_x, train_y)
     return regressor
 
+
+def generate_features_components_correlation_matrix(df_features: pd.DataFrame, df_pca: pd.DataFrame) -> pd.DataFrame:
+    """
+    Generate a correlation matrix between the features and the components of the PCA.
+    :param df_features: The dataset with the features.
+    :param df_pca: The dataset with the components of the PCA.
+    :return: The correlation matrix.
+    """
+    result = pd.DataFrame()
+    for i, feature in enumerate(df_features.columns):
+        for j, component in enumerate(df_pca.columns):
+            result.loc[feature, component] = df_features[feature].corr(df_pca[component])
+    result.index = df_features.columns
+    result.columns = ['PC_' + str(i+1) for i in range(len(df_pca.columns))]
+    return result

@@ -1,6 +1,11 @@
 # Downloadable datasets
 dataset/*.csv
 
+# Generated files
+figures/*.png
+figures/*.pdf
+figures/*.svg
+
 # Logs
 .idea
 

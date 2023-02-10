@@ -15,6 +15,7 @@ UCI_DATA_URL = 'https://archive.ics.uci.edu/ml/machine-learning-databases'
 DATA_URL = UCI_DATA_URL + '/00365/data.zip'
 FILE_NAMES = ['1year.arff', '2year.arff', '3year.arff', '4year.arff', '5year.arff']
 SEPARATOR = ','
+DATASET_FILE_NAME = 'data.csv'
 SKIP = 69
 
 
@@ -39,12 +40,16 @@ def save_dataset(df: pd.DataFrame) -> None:
     :param df: The dataset as a pandas DataFrame.
     :return: None
     """
-    df.to_csv(PATH / 'dataset.csv', index=False)
+    df.to_csv(PATH / DATASET_FILE_NAME, index=False)
 
 
 def load_dataset() -> pd.DataFrame:
     """
     Load the dataset from a CSV file.
+    Because the first column represents the label, shift it to the last position.
     :return: The dataset as a pandas DataFrame.
     """
-    return pd.read_csv(PATH / 'dataset.csv')
+    df = pd.read_csv(PATH / DATASET_FILE_NAME)
+    label = df.iloc[:, 0]
+    features = df.iloc[:, 1:]
+    return features.join(label)
