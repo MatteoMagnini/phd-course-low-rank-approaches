@@ -5,6 +5,9 @@ dataset/*.csv
 figures/*.png
 figures/*.pdf
 figures/*.svg
+figures/distributions/*.png
+figures/distributions/*.pdf
+figures/distributions/*.svg
 
 # Logs
 .idea

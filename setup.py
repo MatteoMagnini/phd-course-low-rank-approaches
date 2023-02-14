@@ -3,10 +3,13 @@ import pandas as pd
 from setuptools import find_packages, setup
 from sklearn.decomposition import PCA
 from dataset import download_dataset, save_dataset, load_dataset
-from figures import save_figure, generate_heatmap, generate_distributions_plots, generate_variance_histogram, \
-    generate_3d_scatter_plot, generate_correlation_circle_plot, generate_2d_scatter_plot
+from figures import save_figure, generate_heatmap, generate_variance_histogram, \
+    generate_3d_scatter_plot, generate_correlation_circle_plot, generate_2d_scatter_plot, \
+    generate_correlation_sphere_plot, generate_correlation_circles
+from figures.distributions import generate_distributions_plots
 from statistic import compute_missing_values_frequency, normalise_dataset, substitute_missing_values, \
-    standardise_dataset, generate_features_components_correlation_matrix, remove_uncorrelated_features
+    standardise_dataset, generate_features_components_correlation_matrix, remove_uncorrelated_features, analise_std
+from figures.distributions import PATH as FIGURES_DISTRIBUTIONS_PATH
 
 
 class DownloadDataset(distutils.cmd.Command):
@@ -41,41 +44,53 @@ class AnalyseDataset(distutils.cmd.Command):
 
     def run(self):
         print('Analyzing dataset...')
-
         dataset = load_dataset()
+        print('Dataset loaded.')
+        print('Number of rows:', len(dataset))
+        print('Number of columns:', len(dataset.columns) - 1)
+        analise_std(dataset)
+        print('Drawing correlation matrix...')
         correlation_matrix = dataset.corr()
         save_figure(generate_heatmap(correlation_matrix), 'correlation_matrix.svg')
+        print('Drawing covariance matrix...')
         covariance_matrix = dataset.cov()
         save_figure(generate_heatmap(covariance_matrix), 'covariance_matrix.svg')
-
-        # distribution_plots = generate_distributions_plots(dataset)
-        # for i, plot in enumerate(distribution_plots):
-        #     save_figure(plot, f'distribution_plot_{i+1}.png')
-
+        print('Removing features that are not correlated with the label...')
         post_processed_dataset = remove_uncorrelated_features(dataset)
+        print('Number of columns after removing uncorrelated features:', len(post_processed_dataset.columns) - 1)
+        analise_std(post_processed_dataset)
+        print('Drawing correlation matrix...')
         correlation_matrix = post_processed_dataset.corr()
         save_figure(generate_heatmap(correlation_matrix), 'correlation_matrix_post_processed.svg')
+        print('Drawing covariance matrix...')
         covariance_matrix = post_processed_dataset.cov()
         save_figure(generate_heatmap(covariance_matrix), 'covariance_matrix_post_processed.svg')
-
-        x = dataset.iloc[:, :-1]
-        y = dataset.iloc[:, -1]
-
+        x = post_processed_dataset.iloc[:, :-1]
+        y = post_processed_dataset.iloc[:, -1]
+        print('Drawing distributions of variables...')
+        distributions = generate_distributions_plots(x)
+        for i, distribution in enumerate(distributions):
+            save_figure(distribution, f'distributions_{i}.svg', FIGURES_DISTRIBUTIONS_PATH)
         most_correlated_features_with_labels = correlation_matrix.iloc[:, -1].abs().sort_values(ascending=False)
         top3_features = most_correlated_features_with_labels.index[1:4]
         save_figure(generate_3d_scatter_plot(x[top3_features], y), 'original_3d_data_representation.svg')
         top2_features = most_correlated_features_with_labels.index[1:3]
         save_figure(generate_2d_scatter_plot(x[top2_features], y), 'original_2d_data_representation.svg')
-
+        print('Applying PCA...')
         pca = PCA(random_state=0)
-        pca_features = pd.DataFrame(pca.fit_transform(x, y))
-        pca_relative_std = pca_features.std() / pca_features.std().sum()
-        corr = generate_features_components_correlation_matrix(x, pca_features)
-        save_figure(generate_correlation_circle_plot(corr), 'correlation_circle.svg')
-
+        pca_dataset = pd.DataFrame(pca.fit_transform(x, y))
+        pca_relative_std = pca_dataset.std() / pca_dataset.std().sum()
+        corr = generate_features_components_correlation_matrix(x, pca_dataset)
+        correlation_circles = generate_correlation_circles(corr, pca_relative_std)
+        for i, circle in enumerate(correlation_circles):
+            save_figure(circle, f'correlation_circle_{i}.svg')
         save_figure(generate_variance_histogram(pca_relative_std), 'pca_variance.svg')
-        save_figure(generate_3d_scatter_plot(pca_features, y), 'pca_3d_scatter_plot.svg')
-        save_figure(generate_2d_scatter_plot(pca_features, y), 'pca_2d_scatter_plot.svg')
+        pca_dataset = pca_dataset.iloc[:, :6]
+        most_correlated_pca_components_with_labels = pca_dataset.join(y).corr().abs().iloc[:, -1].sort_values(ascending=False)
+        top3_pca = most_correlated_pca_components_with_labels.index[1:4]
+        save_figure(generate_3d_scatter_plot(pca_dataset[top3_pca], y), 'pca_3d_scatter_plot.svg')
+        top2_pca = most_correlated_pca_components_with_labels.index[1:3]
+        save_figure(generate_2d_scatter_plot(pca_dataset[top2_pca], y), 'pca_2d_scatter_plot.svg')
         print('Dataset analyzed.')
 
 

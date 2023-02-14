@@ -5,6 +5,8 @@ from sklearn.linear_model import LinearRegression
 
 PATH = Path(__file__).parents[0]
 
+CORR_THRESHOLD = 1E-2
+
 
 def compute_missing_values_frequency(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -15,6 +17,37 @@ def compute_missing_values_frequency(df: pd.DataFrame) -> pd.DataFrame:
     return df.isnull().sum() / len(df)
 
 
+def analise_std(df: pd.DataFrame) -> None:
+    """
+    Analyse the standard deviation of each column.
+    :param df: The dataset as a pandas DataFrame.
+    :return: None
+    """
+    df_features = df.iloc[:, :-1]
+    standard_deviations = df_features.std()
+    percentage_std = standard_deviations / standard_deviations.sum() * 100
+    one_percent = len(percentage_std[percentage_std < 1])
+    print(f'\nFeatures with standard deviation less than 1% ({one_percent})')
+    if one_percent < 10:
+        for idx, column in enumerate(df_features.columns):
+            if percentage_std[idx] < 1:
+                print(f'{column} - standard deviation: {standard_deviations[idx]} - percentage: {percentage_std[idx]}')
+    one_ten_percent = len(percentage_std[(1 <= percentage_std) & (percentage_std < 10)])
+    print(f'\nFeatures with standard deviation greater than 1% and less than 10% ({one_ten_percent})')
+    if one_ten_percent < 10:
+        for idx, column in enumerate(df_features.columns):
+            if 1 <= percentage_std[idx] < 10:
+                print(f'{column} - standard deviation: {standard_deviations[idx]} - percentage: {percentage_std[idx]}')
+    ten_percent = len(percentage_std[percentage_std >= 10])
+    print(f'\nFeatures with standard deviation greater than 10% ({ten_percent}):')
+    if ten_percent < 10:
+        for idx, column in enumerate(df_features.columns):
+            if percentage_std[idx] >= 10:
+                print(f'{column} - standard deviation: {standard_deviations[idx]} - percentage: {percentage_std[idx]}')
+    print('\n')
+
+
+# Not used
 def substitute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     """
     Substitute missing values following these criteria:
@@ -56,12 +89,13 @@ def substitute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
 
 def remove_uncorrelated_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Remove the features that are not correlated with the label.
+    Remove the features that are not correlated with the label with threshold t1 and that are not correlated with other
+     features with threshold t2.
     :param df: The dataset as a pandas DataFrame.
     :return: The dataset with the uncorrelated features removed.
     """
     correlation = df.corr().iloc[-1]
-    return df[[c for c in df.columns if (abs(correlation[c]) > 0.1) and not math.isnan(correlation[c])]]
+    return df[[c for c in df.columns if (abs(correlation[c]) > CORR_THRESHOLD) and not math.isnan(correlation[c])]]
 
 
 def normalise_dataset(df: pd.DataFrame) -> pd.DataFrame:
