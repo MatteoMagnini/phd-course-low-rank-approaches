@@ -8,6 +8,9 @@ figures/*.svg
 figures/distributions/*.png
 figures/distributions/*.pdf
 figures/distributions/*.svg
+figures/data_visualisation/*.png
+figures/data_visualisation/*.pdf
+figures/data_visualisation/*.svg
 
 # Logs
 .idea

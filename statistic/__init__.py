@@ -89,8 +89,7 @@ def substitute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
 
 def remove_uncorrelated_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Remove the features that are not correlated with the label with threshold t1 and that are not correlated with other
-     features with threshold t2.
+    Remove the features that are not correlated with the label with threshold CORR_THRESHOLD.
     :param df: The dataset as a pandas DataFrame.
     :return: The dataset with the uncorrelated features removed.
     """
@@ -117,6 +116,17 @@ def standardise_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """
     for column in df.columns[:-1]:
         df[column] = (df[column] - df[column].mean()) / df[column].std()
+    return df
+
+
+def center_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Center the dataset except for the last column.
+    :param df: The dataset as a pandas DataFrame.
+    :return: The centered dataset.
+    """
+    for column in df.columns[:-1]:
+        df[column] = df[column] - df[column].mean()
     return df
 
 

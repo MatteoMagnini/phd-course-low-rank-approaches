@@ -40,11 +40,14 @@ The features are removed if their absolute correlation value with the target var
 After the preprocessing step, the dataset contains 71 features.
 The correlation matrix after the preprocessing step is shown below.
 
-![Correlation matrix](figures/correlation_matrix_post_processed.svg)
-*Correlation matrix of the preprocessed features*
+[//]: # (![Correlation matrix]&#40;figures/correlation_matrix_post_processed.svg&#41;)
 
-![Covariance matrix](figures/covariance_matrix_post_processed.svg)
-*Covariance matrix of the preprocessed features*
+[//]: # (*Correlation matrix of the preprocessed features*)
+
+[//]: # ()
+[//]: # (![Covariance matrix]&#40;figures/covariance_matrix_post_processed.svg&#41;)
+
+[//]: # (*Covariance matrix of the preprocessed features*)
 
 ## 2.3 More analysis
 Computing the variance of the features shows that the majority of the features (62) have a variance that is less than the 1% of the total variance.
@@ -72,13 +75,17 @@ The following figures show the distributions of the 71 features.
 # 3. PCA
 
 ![PCA explained variance](figures/pca_variance.svg)
-*PCA variance informative contribution: blue bars represent the percentage variance of the i-th principal component, while the red line represents the cumulative variance. Principal components whose percentage variance is less than 1% are not shown.*
+*PCA variance informative contribution: blue bars represent the percentage variance of the i-th principal component, while the red line represents the cumulative variance. Principal components whose percentage variance is less than 0.1% are not shown.*
 
-The figure shows that the cumulative percentage variance is greater than 90% after the 6-th principal component.
+The figure shows that the cumulative percentage variance is greater than 99% after the 6-th principal component.
 Moreover, there is a clear elbow in the curve after the 6-th principal component.
 Therefore, the data space is reduced to 6 dimensions.
 
 ## 3.1 Analysis
+
+Below the analysis of the correlation between the principal components and the original features.
+The six principal components are shown using correlation circles.
+Features whose correlation with both PC is greater than 0.3 are shown in the circle, the others are not shown for ease of visualization.
 
 ![PC1 and PC2 circle of correlation](figures/correlation_circle_0.svg)
 *Circle of correlation of the first two principal components*
@@ -93,6 +100,8 @@ PC2 is positive correlated with features:
 - `Cash Turnover Rate`
 - `Research and development expense rate`
 
+A possible interpretation for PC1 is that it summarises turnover asset features, while PC2 is a combination of asset growth and cash turnover rate.
+
 ![PC3 and PC4 circle of correlation](figures/correlation_circle_1.svg)
 *Circle of correlation of the third and fourth principal components*
 
@@ -104,6 +113,8 @@ and negative correlated with features:
 
 PC4 is positive correlated with features:
 - `Research and development expense rate`
+
+PC3 is a combination of cash turnover rate and total asset growth rate, while PC4 mostly represents the research and development expense rate.
 
 ![PC5 and PC6 circle of correlation](figures/correlation_circle_2.svg)
 *Circle of correlation of the fifth and sixth principal components*
@@ -121,3 +132,47 @@ PC6 is positive correlated with features:
 and negative correlated with features:
 - `Quick Assets Turnover Rate`
 
+PC5 and PC6, similarly to PC1, are combination of features concerning assets metrics.
+
+# 4. Data visualisation
+
+## 4.1 Original data
+
+The original data have 71 features, so the only possible way to visualise them is to choose two (resp. three) features and plot them in a 2D (resp. 3D) space.
+Considering that the dataset comes for a binary classification problem, it is convenient to select the features that are more correlated with the target variable.
+
+![2D scatter plot](figures/data_visualisation/original_2d.svg)
+*2D scatter plot of the original data, red dots represent bankrupt companies, blue dots represent non-bankrupt companies*
+
+![3D scatter plot](figures/data_visualisation/original_3d.svg)
+*3D scatter plot of the original data, red dots represent bankrupt companies, blue dots represent non-bankrupt companies*
+
+The most correlated features with the target variable are:
+- `Net Income to Total Assets`
+- `ROA(A) before interest and depreciation before interest`
+- `ROA(B) before interest and depreciation after tax`
+
+We can clearly see that companies are clustered into one single main blob with outliers at the edges.
+A good portion of companies that experience a bankruptcy are outliers.
+However, there are also some companies that are not bankrupt but are outliers and companies that are bankrupt but are in the main cluster.
+
+## 4.2 PCA
+
+The PCA data have 6 features, so it is possible to explore all the combinations of the principal components for data visualisation in 2d and 3d.
+In general the principal components are not highly correlated with the target variable, so the two classes are not well separated in all the plots.
+One good combination for a 2d plot is PC2 and PC3.
+
+![2D scatter plot](figures/data_visualisation/pc2_pc3.svg)
+*2D scatter plot of the PCA data, red dots represent bankrupt companies, blue dots represent non-bankrupt companies*
+
+Data are split into two clusters that are well separated.
+There are some outliers in-between the two clusters, most of them are companies that have experienced bankrupt.
+
+# 5. Classification
+
+Using the original data, a Random Forest with 100 trees (default scikit-learning parameters) seems a good choice.
+The dataset is split into training and test set with a 50/50 ratio having care to preserve the class distribution in both sets.
+The model is trained on the training set and then evaluated on the test set.
+The whole process is repeated 30 times and the average accuracy is 0.9696.
+
+With the same methodology, the accuracy of the model is 0.9667 when the dataset is reduced to 6 dimensions using PCA.

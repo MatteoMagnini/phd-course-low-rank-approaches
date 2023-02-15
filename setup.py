@@ -1,15 +1,15 @@
 import distutils.cmd
-import pandas as pd
 from setuptools import find_packages, setup
 from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 from dataset import download_dataset, save_dataset, load_dataset
-from figures import save_figure, generate_heatmap, generate_variance_histogram, \
-    generate_3d_scatter_plot, generate_correlation_circle_plot, generate_2d_scatter_plot, \
-    generate_correlation_sphere_plot, generate_correlation_circles
+from figures import *
 from figures.distributions import generate_distributions_plots
-from statistic import compute_missing_values_frequency, normalise_dataset, substitute_missing_values, \
-    standardise_dataset, generate_features_components_correlation_matrix, remove_uncorrelated_features, analise_std
+from statistic import *
 from figures.distributions import PATH as FIGURES_DISTRIBUTIONS_PATH
+from figures.data_visualisation import PATH as FIGURES_DATA_VISUALISATION_PATH
+from dataset import PATH as DATA_PATH
 
 
 class DownloadDataset(distutils.cmd.Command):
@@ -44,7 +44,7 @@ class AnalyseDataset(distutils.cmd.Command):
 
     def run(self):
         print('Analyzing dataset...')
-        dataset = load_dataset()
+        dataset = center_dataset(load_dataset())
         print('Dataset loaded.')
         print('Number of rows:', len(dataset))
         print('Number of columns:', len(dataset.columns) - 1)
@@ -73,25 +73,72 @@ class AnalyseDataset(distutils.cmd.Command):
             save_figure(distribution, f'distributions_{i}.svg', FIGURES_DISTRIBUTIONS_PATH)
         most_correlated_features_with_labels = correlation_matrix.iloc[:, -1].abs().sort_values(ascending=False)
         top3_features = most_correlated_features_with_labels.index[1:4]
-        save_figure(generate_3d_scatter_plot(x[top3_features], y), 'original_3d_data_representation.svg')
+        save_figure(generate_3d_scatter_plot(x[top3_features], y), FIGURES_DATA_VISUALISATION_PATH / 'original_3d.svg')
         top2_features = most_correlated_features_with_labels.index[1:3]
-        save_figure(generate_2d_scatter_plot(x[top2_features], y), 'original_2d_data_representation.svg')
+        save_figure(generate_2d_scatter_plot(x[top2_features], y), FIGURES_DATA_VISUALISATION_PATH / 'original_2d.svg')
         print('Applying PCA...')
         pca = PCA(random_state=0)
         pca_dataset = pd.DataFrame(pca.fit_transform(x, y))
-        pca_relative_std = pca_dataset.std() / pca_dataset.std().sum()
+        pca_columns = [f'PC{i}' for i in range(1, len(pca_dataset.columns) + 1)]
+        pca_dataset.columns = pca_columns
+        pca_relative_var = pca_dataset.var() / pca_dataset.var().sum()
         corr = generate_features_components_correlation_matrix(x, pca_dataset)
-        correlation_circles = generate_correlation_circles(corr, pca_relative_std)
+        correlation_circles = generate_correlation_circles(corr, pca_relative_var)
         for i, circle in enumerate(correlation_circles):
             save_figure(circle, f'correlation_circle_{i}.svg')
-        save_figure(generate_variance_histogram(pca_relative_std), 'pca_variance.svg')
+        save_figure(generate_variance_histogram(pca_relative_var), 'pca_variance.svg')
         pca_dataset = pca_dataset.iloc[:, :6]
-        most_correlated_pca_components_with_labels = pca_dataset.join(y).corr().abs().iloc[:, -1].sort_values(ascending=False)
-        top3_pca = most_correlated_pca_components_with_labels.index[1:4]
-        save_figure(generate_3d_scatter_plot(pca_dataset[top3_pca], y), 'pca_3d_scatter_plot.svg')
-        top2_pca = most_correlated_pca_components_with_labels.index[1:3]
-        save_figure(generate_2d_scatter_plot(pca_dataset[top2_pca], y), 'pca_2d_scatter_plot.svg')
+        print('Drawing 3D scatter plot for data visualisation...')
+        for first_pc, second_pc in [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (1, 2), (1, 3), (1, 4), (1, 5), (2, 3), (2, 4),
+                                    (2, 5), (3, 4), (3, 5), (4, 5)]:
+            save_figure(generate_2d_scatter_plot(pca_dataset.iloc[:, [first_pc, second_pc]], y),
+                        FIGURES_DATA_VISUALISATION_PATH / f'pc{first_pc+1}_pc{second_pc+1}.svg')
+        print('Drawing 2D scatter plot for data visualisation...')
+        for fist_pc, second_pc, third_pc in [(0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 1, 5), (0, 2, 3), (0, 2, 4), (0, 2, 5),
+                                             (0, 3, 4), (0, 3, 5), (0, 4, 5), (1, 2, 3), (1, 2, 4), (1, 2, 5), (1, 3, 4),
+                                             (1, 3, 5), (1, 4, 5), (2, 3, 4), (2, 3, 5), (2, 4, 5), (3, 4, 5)]:
+            save_figure(generate_3d_scatter_plot(pca_dataset.iloc[:, [fist_pc, second_pc, third_pc]], y),
+                        FIGURES_DATA_VISUALISATION_PATH / f'pc{fist_pc+1}_pc{second_pc+1}_pc{third_pc+1}.svg')
+        print('Saving PCA dataset...')
+        pca_dataset.join(y).to_csv(DATA_PATH / 'pca_dataset.csv', index=False)
         print('Dataset analyzed.')
+
+
+class Classification(distutils.cmd.Command):
+    """A custom command to run the classification."""
+    description = 'Run the classification'
+    user_options = []
+
+    def initialize_options(self):
+        """Set default values for options."""
+        pass
+
+    def finalize_options(self):
+        """Post-process options."""
+        pass
+
+    def run(self):
+        """Run command."""
+        print('Running classification...')
+
+        def evaluate_classification(dataset):
+            accuracy = 0
+            print('Evaluating classification on 30 different executions...')
+            for i in range(30):
+                train, test = train_test_split(dataset, test_size=0.5, random_state=i, stratify=dataset.iloc[:, -1])
+                train_x = train.iloc[:, :-1]
+                train_y = train.iloc[:, -1]
+                test_x = test.iloc[:, :-1]
+                test_y = test.iloc[:, -1]
+                model = RandomForestClassifier(random_state=i)
+                model.fit(train_x, train_y)
+                accuracy += model.score(test_x, test_y)
+            print(f'Mean accuracy: {accuracy/30}')
+
+        print('Classification on the original dataset...')
+        evaluate_classification(load_dataset())
+        print('Classification on the PCA dataset...')
+        evaluate_classification(pd.read_csv(DATA_PATH / 'pca_dataset.csv'))
 
 
 setup(
@@ -123,5 +170,6 @@ setup(
     cmdclass={
         'download_dataset': DownloadDataset,
         'analyse_dataset': AnalyseDataset,
+        'classification': Classification,
     },
 )

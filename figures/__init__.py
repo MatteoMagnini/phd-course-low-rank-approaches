@@ -11,6 +11,7 @@ PATH = Path(__file__).parents[0]
 
 CUMULATIVE_VARIANCE_THRESHOLD = 0.9
 PC_FEATURE_THRESHOLD = 0.3
+IGNORE_VARIANCE_THRESHOLD = 1E-3
 
 
 def generate_heatmap(df: pd.DataFrame) -> plt.Figure:
@@ -30,13 +31,13 @@ def generate_heatmap(df: pd.DataFrame) -> plt.Figure:
 def generate_variance_histogram(variances: np.ndarray) -> plt.Figure:
     """
     Generate a histogram of the variances of the principal components.
-    The plot does not show the variance of principal components whose variance is less than 0.01.
+    The plot does not show the variance of principal components whose variance is less than IGNORE_VARIANCE_THRESHOLD.
     The plot includes also a line that represents the sum of all previous variances.
     :param variances: The variances of the principal components.
     :return: The histogram as a matplotlib Figure.
     """
     f, ax = plt.subplots(figsize=(20, 10))
-    variances = variances[variances > 0.01]
+    variances = variances[variances > IGNORE_VARIANCE_THRESHOLD]
     ax.bar(range(1, len(variances) + 1), variances.cumsum(), color='red')
     for bar in ax.patches:
         height = bar.get_height()
@@ -57,7 +58,10 @@ def generate_3d_scatter_plot(df: pd.DataFrame, labels: np.ndarray) -> plt.Figure
     """
     f = plt.figure(figsize=(20, 10))
     ax = f.add_subplot(111, projection='3d')
-    ax.scatter(df.iloc[:, 2], df.iloc[:, 1], df.iloc[:, 0], c=labels, cmap='bwr')
+    ax.scatter(df.iloc[:, 0], df.iloc[:, 1], df.iloc[:, 2], c=labels, cmap='bwr')
+    ax.set_xlabel(df.columns[0])
+    ax.set_ylabel(df.columns[1])
+    ax.set_zlabel(df.columns[2])
     return f
 
 
@@ -71,6 +75,8 @@ def generate_2d_scatter_plot(df: pd.DataFrame, labels: np.ndarray) -> plt.Figure
     """
     f, ax = plt.subplots(figsize=(20, 10))
     ax.scatter(df.iloc[:, 0], df.iloc[:, 1], c=labels, cmap='bwr')
+    ax.set_xlabel(df.columns[0])
+    ax.set_ylabel(df.columns[1])
     return f
 
 
