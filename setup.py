@@ -2,7 +2,12 @@ import distutils.cmd
 from setuptools import find_packages, setup
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+
 from dataset import download_dataset, save_dataset, load_dataset
 from figures import *
 from figures.distributions import generate_distributions_plots
@@ -48,6 +53,8 @@ class AnalyseDataset(distutils.cmd.Command):
         print('Dataset loaded.')
         print('Number of rows:', len(dataset))
         print('Number of columns:', len(dataset.columns) - 1)
+        print('Not bunkrupt companies:', len(dataset[dataset['Bankrupt?'] == 0]))
+        print('Bunkrupt companies:', len(dataset[dataset['Bankrupt?'] == 1]))
         analise_std(dataset)
         print('Drawing correlation matrix...')
         correlation_matrix = dataset.corr()
@@ -122,18 +129,22 @@ class Classification(distutils.cmd.Command):
         print('Running classification...')
 
         def evaluate_classification(dataset):
-            accuracy = 0
-            print('Evaluating classification on 30 different executions...')
-            for i in range(30):
-                train, test = train_test_split(dataset, test_size=0.5, random_state=i, stratify=dataset.iloc[:, -1])
-                train_x = train.iloc[:, :-1]
-                train_y = train.iloc[:, -1]
-                test_x = test.iloc[:, :-1]
-                test_y = test.iloc[:, -1]
-                model = RandomForestClassifier(random_state=i)
-                model.fit(train_x, train_y)
-                accuracy += model.score(test_x, test_y)
-            print(f'Mean accuracy: {accuracy/30}')
+            train, test = train_test_split(dataset, test_size=0.2, random_state=0, stratify=dataset.iloc[:, -1])
+            train_x = train.iloc[:, :-1]
+            train_y = train.iloc[:, -1]
+            test_x = test.iloc[:, :-1]
+            test_y = test.iloc[:, -1]
+            model = KNeighborsClassifier(n_neighbors=5)
+            model.fit(train_x, train_y)
+            accuracy = model.score(test_x, test_y)
+            y_pred = model.predict(test_x)
+            f1 = f1_score(test_y, y_pred, average='weighted')
+            precision = precision_score(test_y, y_pred, average='weighted')
+            recall = recall_score(test_y, y_pred, average='weighted')
+            print(f'Accuracy: {accuracy}')
+            print(f'F1: {f1}')
+            print(f'Precision: {precision}')
+            print(f'Recall: {recall}')
 
         print('Classification on the original dataset...')
         evaluate_classification(load_dataset())

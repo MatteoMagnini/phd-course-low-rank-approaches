@@ -17,9 +17,9 @@ However, you can find it in the `data` folder.
 Alternatively, it is available on Kaggle [here](https://www.kaggle.com/fedesoriano/company-bankruptcy-prediction).
 
 ## 2.1 Description
-The dataset contains 6,348 observations and 95 features and one target variable.
+The dataset contains 6,819 observations and 95 features and one target variable.
 The target variable is the `Bankrupt?` column, which is a binary variable.
-The dataset is imbalanced, with 5,966 observations of non-bankrupt companies and 382 observations of bankrupt companies.
+The dataset is imbalanced, with 6,599 observations of non-bankrupt companies and 220 observations of bankrupt companies.
 
 ## 2.2 Analysis
 A preliminary analysis of the dataset shows that there are no missing values.
@@ -134,6 +134,11 @@ and negative correlated with features:
 
 PC5 and PC6, similarly to PC1, are combination of features concerning assets metrics.
 
+To summarise, we can give the following interpretation to these results.
+Most principal components (e.g., PC1, PC5, PC6) group features related to assets metrics, in particular measures concerning assets in the short time term.
+The other correlated features besides assets metrics are the cash turnover rate and the research and development expense rate.
+This leads to the conclusion that companies distinguish themselves by their assets management, in particular by their short term assets management, by their cash turnover and by the research and development expense rate.
+
 # 4. Data visualisation
 
 ## 4.1 Original data
@@ -170,9 +175,20 @@ There are some outliers in-between the two clusters, most of them are companies 
 
 # 5. Classification
 
-Using the original data, a Random Forest with 100 trees (default scikit-learning parameters) seems a good choice.
-The dataset is split into training and test set with a 50/50 ratio having care to preserve the class distribution in both sets.
+K-nearest neighbours (default scikit-learning parameters) classification is performed on the original data and on the PCA data.
+The dataset is split into training and test set with 80/20 train/test ratio having care to preserve the class distribution in both sets.
 The model is trained on the training set and then evaluated on the test set.
-The whole process is repeated 30 times and the average accuracy is 0.9696.
+Result metrics are:
+- Accuracy: 0.9677
+- F1 score: 0.9545
+- Precision: 0.954
+- Recall: 0.9677
 
-With the same methodology, the accuracy of the model is 0.9667 when the dataset is reduced to 6 dimensions using PCA.
+With the same methodology, the model is trained on the PCA data.
+Result metrics are:
+- Accuracy: 0.9684
+- F1 score: 0.9537
+- Precision: 0.9695
+- Recall: 0.9685
+
+The reduction of dimensionality does not seem to affect the classification performance.

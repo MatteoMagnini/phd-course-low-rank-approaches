@@ -5,12 +5,26 @@ dataset/*.csv
 figures/*.png
 figures/*.pdf
 figures/*.svg
+!figures/correlation_matrix.svg
+!figures/covariance_matrix.png
+!figures/pca_variance.svg
+!figures/correlation_circle_0.svg
+!figures/correlation_circle_1.svg
+!figures/correlation_circle_2.svg
 figures/distributions/*.png
 figures/distributions/*.pdf
 figures/distributions/*.svg
+!figures/distributions/distributions_0.svg
+!figures/distributions/distributions_1.svg
+!figures/distributions/distributions_2.svg
+!figures/distributions/distributions_3.svg
+!figures/distributions/distributions_4.svg
 figures/data_visualisation/*.png
 figures/data_visualisation/*.pdf
 figures/data_visualisation/*.svg
+!figures/data_visualisation/original_2d.svg
+!figures/data_visualisation/original_3d.svg
+!figures/data_visualisation/pc2_pc3.svg
 
 # Logs
 .idea
