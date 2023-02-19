@@ -10,6 +10,12 @@ You can do this by running the following command in the terminal:
 
 The recommended version of python is 3.10.0 or above.
 
+## 1.1 Running the code
+To reproduce the results, you can run the following commands:
+- `python -m setup.py analyse_datset` performs a preliminary analysis on the original dataset and then applies PCA.
+It also generates all the plots included in this document (and others that are not included).
+- `python -m setup.py classification` performs the classification task giving the results reported in the document.
+
 # 2. Dataset
 The dataset used in this project is the [Taiwanese Bankruptcy Dataset](https://archive.ics.uci.edu/ml/datasets/Taiwanese+Bankruptcy+Prediction).
 Unfortunately, it seems that UCI has some issues with their website, so the dataset is not available at the moment.
@@ -71,6 +77,10 @@ The following figures show the distributions of the 71 features.
 
 ![Distributions of features 65-71](figures/distributions/distributions_4.svg)
 *Distributions of the features 65-71*
+
+We observe that several features have values in a tiny range (their histogram have one or few columns, i.e., the standard deviation is very small).
+There are also features with distributions that resemble a Gaussian distribution (e.g., `Quick Assets/Total Assets`, `Current Assets/Total Assets`, etc.).
+Other features distributions have different shapes.
 
 # 3. PCA
 
