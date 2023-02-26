@@ -1,5 +1,6 @@
 # Downloadable datasets
 dataset/*.csv
+!dataset/data.csv
 
 # Generated files
 figures/*.png
